@@ -1,0 +1,23 @@
+Steps for uploading data and code and running analysis in NSG portal
+
+1. Create a folder "anxiety2021" in your laptop
+
+2. create a subfolder "func" within "anxiety2021" folder
+
+3. create subsubfolders for each subject (e.g., "10206" etc.) within "func"
+
+4. copy 4d functional file (e.g., "rfMRI_REST1_LR.nii" ) and movement regressor file (e.g., "Movement_Regressors.txt") for each subject into subsubfolders created in step 3
+
+5. copy "spm12" folder and and "masks" folder (containing .nii images of each ROI mask) into "anxiety2021" folder
+
+6. copy preproc.m file into patent ("anxiety2021") folder
+
+7. zip anxiety2021 folder
+
+8. aceess NSG portal
+
+9. go to Data> upload Data> select "anxiety2021.zip" and upload
+
+10. go to Tasks> Input: select anxiety2021> Tool: select MATLAB R2016b on Comet> Parameters: preproc.m (filename), 0.75* n (runtime) [where n= number of subjects]
+
+11. save and run the task
