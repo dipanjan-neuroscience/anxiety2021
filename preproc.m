@@ -20,10 +20,23 @@ spm_jobman('initcfg');
 
 nd=5; % no of dummy scans
 tr = 0.720; % in seconds
-
 % for smoothing
 %fwhm=[4 4 4]; % the thumb of rules says fwhm should be twice the voxel dimension
-subNames= {'100206'};
+
+
+% Get a list of all files and folders in func folder.
+files = dir('func');
+% Get a logical vector that tells which is a directory.
+dirFlags = [files.isdir];
+% Extract only those that are directories.
+subFolders = files(dirFlags);
+subFolders(ismember( {subFolders.name}, {'.', '..'})) = [];  %remove . and ..
+for k = 1 : length(subFolders)
+subNames{1,k}=subFolders(k).name;
+end
+%subNames= {'101309','102109','102715','105923','107422','109325','110007','110411','110613','111312','111514','112112','112819','114217','114419','115017','115724','117324','117930','118023'};
+
+clear k subFolders 
 for sI = 1: length(subNames)
 
     
@@ -198,8 +211,6 @@ save(fullfile(glm_dir,'nuis_reg.txt' ), 'nuis_reg','-ascii');
 matlabbatch{1}.spm.stats.fmri_spec.dir = cellstr(glm2_dir);
 matlabbatch{1}.spm.stats.fmri_spec.timing.units = 'scans'; 
 matlabbatch{1}.spm.stats.fmri_spec.timing.RT = tr; 
-matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t = 16; 
-matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t0 = 8; 
 %matlabbatch{1}.spm.stats.fmri_spec.sess.scans=cellstr(smooth);
 matlabbatch{1}.spm.stats.fmri_spec.sess.scans=cellstr(f);
 matlabbatch{1}.spm.stats.fmri_spec.sess.cond = struct('name', {}, 'onset', {}, 'duration', {}, 'tmod', {}, 'pmod', {}, 'orth', {}); 
@@ -251,9 +262,8 @@ brain_mask=fullfile(root_dir,'GLM', subNames{sI},'mask.nii');
 
 for vI = 1: length(voiNames)
 
-mask_dir= fullfile (root_dir,'masks', maskNames{vI});
-
-
+mask_dir= fullfile (root_dir,'masks', maskNames{vI})
+ 
 clear matlabbatch;
 matlabbatch{1}.spm.util.voi.spmmat = cellstr(spm_dir); % directory to spm.mat file
 matlabbatch{1}.spm.util.voi.adjust = NaN;
@@ -284,20 +294,11 @@ voiNamesL={'VOI_lSMA_1.mat', 'VOI_lMC_1.mat'};
 voiNamesR={'VOI_rSMA_1.mat', 'VOI_rMC_1.mat'};   
 
 
-% voiNamesL={'VOI_laIns_1.mat','VOI_lpIns_1.mat'};
-% voiNamesR={'VOI_raIns_1.mat','VOI_rpIns_1.mat'}; 
-% 
-% voiNamesL={'VOI_lFp1_1.mat','VOI_lSSC_1.mat','VOI_lV1_1.mat','VOI_lA1_1.mat'};
-% voiNamesR={'VOI_rFp1_1.mat','VOI_rSSC_1.mat','VOI_rV1_1.mat','VOI_rA1_1.mat'};
-
-
-
-
 for sI = 1: length(subNames)
 
 cd(fullfile(root_dir,'GLM2', subNames{sI}));
 
-model_name = 'L_Mot';
+model_name = 'L_MOT';
 
 xY         = voiNamesL;
 
@@ -371,7 +372,7 @@ for sI = 1: length(subNames)
 
 cd(fullfile(root_dir, 'GLM2', subNames{sI}));
 
-model_name = 'R_Mot';
+model_name = 'R_MOT';
 
 xY         = voiNamesR;
 
@@ -445,28 +446,381 @@ clear DCM
 
  for h=1: length(subNames) 
    
- GCM_L_Mot(h,1) = {fullfile(root_dir, 'GLM2', subNames{h},'DCM_L_Mot.mat')}; 
+ GCM_L_MOT(h,1) = {fullfile(root_dir, 'GLM2', subNames{h},'DCM_L_MOT.mat')}; 
  
  end
   
  
  for h=1: length(subNames) 
    
- GCM_R_Mot(h,1) = {fullfile(root_dir, 'GLM2', subNames{h},'DCM_R_Mot.mat')}; 
+ GCM_R_MOT(h,1) = {fullfile(root_dir, 'GLM2', subNames{h},'DCM_R_MOT.mat')}; 
  
  end
   
 cd(root_dir);
 
 use_parfor = true ;
-GCM_L_Mot = spm_dcm_fit(GCM_L_Mot);
-save('GCM_L_Mot.mat','GCM_L_Mot');
+GCM_L_MOT = spm_dcm_fit(GCM_L_MOT);
+save('GCM_L_MOT.mat','GCM_L_MOT');
 
 
-GCM_R_Mot = spm_dcm_fit(GCM_R_Mot);
-save('GCM_R_Mot.mat','GCM_R_Mot');
+GCM_R_MOT = spm_dcm_fit(GCM_R_MOT);
+save('GCM_R_MOT.mat','GCM_R_MOT');
+
+voiNamesL={'VOI_laIns_1.mat','VOI_lpIns_1.mat'};
+voiNamesR={'VOI_raIns_1.mat','VOI_rpIns_1.mat'};
+
+for sI = 1: length(subNames)
+
+cd(fullfile(root_dir,'GLM2', subNames{sI}));
+
+model_name = 'L_INTERO';
+
+xY         = voiNamesL;
+
+SPM        = 'SPM.mat';
+
+n   = 2;    % number of regions
+
+nu  = 1;    % number of inputs. For DCM for CSD we have one input: null
+
+TR  = 0.72;    % volume repetition time (seconds)
+
+TE  = 0.0331; % echo time (seconds)
+
+ 
+
+% Connectivity matrices
+
+a  = ones(n,n);
+
+
+b  = zeros(n,n,nu);
+
+c  = zeros(n,nu);
+
+d  = zeros(n,n,0);
+
+ 
+
+% Specify DCM
+
+s = struct();
+
+s.name       = model_name;
+
+s.u          = [];
+
+s.delays     = repmat(TR/2, 1, n)';
+
+s.TE         = TE;
+
+s.nonlinear  = false;
+
+s.two_state  = false;
+
+s.stochastic = false;
+
+s.centre     = false;
+
+s.induced    = 1;       % indicates DCM for CSD
+
+s.a          = a;
+
+s.b          = b;
+
+s.c          = c;
+
+s.d          = d;
+
+ 
+
+DCM = spm_dcm_specify(SPM,xY,s);
+
+
+
+end
+
+clear DCM
+
+
+for sI = 1: length(subNames)
+
+cd(fullfile(root_dir, 'GLM2', subNames{sI}));
+
+model_name = 'R_INTERO';
+
+xY         = voiNamesR;
+
+SPM        = 'SPM.mat';
+
+n   = 2;    % number of regions
+
+nu  = 1;    % number of inputs. For DCM for CSD we have one input: null
+
+TR  = 0.72;    % volume repetition time (seconds)
+
+TE  = 0.0331; % echo time (seconds)
+
+ 
+
+% Connectivity matrices
+
+a  = ones(n,n);
+
+
+b  = zeros(n,n,nu);
+
+c  = zeros(n,nu);
+
+d  = zeros(n,n,0);
+
+ 
+
+% Specify DCM
+
+s = struct();
+
+s.name       = model_name;
+
+s.u          = [];
+
+s.delays     = repmat(TR/2, 1, n)';
+
+s.TE         = TE;
+
+s.nonlinear  = false;
+
+s.two_state  = false;
+
+s.stochastic = false;
+
+s.centre     = false;
+
+s.induced    = 1;       % indicates DCM for CSD
+
+s.a          = a;
+
+s.b          = b;
+
+s.c          = c;
+
+s.d          = d;
+
+ 
+
+DCM = spm_dcm_specify(SPM,xY,s);
+
+
+
+end
+
+clear DCM
+%%estimate DCMs
+
+
+
+ for h=1: length(subNames) 
+   
+ GCM_L_INTERO(h,1) = {fullfile(root_dir, 'GLM2', subNames{h},'DCM_L_INTERO.mat')}; 
+ 
+ end
+  
+ 
+ for h=1: length(subNames) 
+   
+ GCM_R_INTERO(h,1) = {fullfile(root_dir, 'GLM2', subNames{h},'DCM_R_INTERO.mat')}; 
+ 
+ end
+  
+cd(root_dir);
+
+use_parfor = true ;
+GCM_L_INTERO = spm_dcm_fit(GCM_L_INTERO);
+save('GCM_L_INTERO.mat','GCM_L_INTERO');
+
+
+GCM_R_INTERO = spm_dcm_fit(GCM_R_INTERO);
+save('GCM_R_INTERO.mat','GCM_R_INTERO');
+
+
+voiNamesL={'VOI_lFp1_1.mat','VOI_lSSC_1.mat','VOI_lV1_1.mat','VOI_lA1_1.mat'};
+voiNamesR={'VOI_rFp1_1.mat','VOI_rSSC_1.mat','VOI_rV1_1.mat','VOI_rA1_1.mat'};
+
+for sI = 1: length(subNames)
+
+cd(fullfile(root_dir,'GLM2', subNames{sI}));
+
+model_name = 'L_EXTERO';
+
+xY         = voiNamesL;
+
+SPM        = 'SPM.mat';
+
+n   = 4;    % number of regions
+
+nu  = 1;    % number of inputs. For DCM for CSD we have one input: null
+
+TR  = 0.72;    % volume repetition time (seconds)
+
+TE  = 0.0331; % echo time (seconds)
+
+ 
+
+% Connectivity matrices
+
+a  = ones(n,n);
+
+
+b  = zeros(n,n,nu);
+
+c  = zeros(n,nu);
+
+d  = zeros(n,n,0);
+
+ 
+
+% Specify DCM
+
+s = struct();
+
+s.name       = model_name;
+
+s.u          = [];
+
+s.delays     = repmat(TR/2, 1, n)';
+
+s.TE         = TE;
+
+s.nonlinear  = false;
+
+s.two_state  = false;
+
+s.stochastic = false;
+
+s.centre     = false;
+
+s.induced    = 1;       % indicates DCM for CSD
+
+s.a          = a;
+
+s.b          = b;
+
+s.c          = c;
+
+s.d          = d;
+
+ 
+
+DCM = spm_dcm_specify(SPM,xY,s);
+
+
+
+end
+
+clear DCM
+
+
+for sI = 1: length(subNames)
+
+cd(fullfile(root_dir, 'GLM2', subNames{sI}));
+
+model_name = 'R_EXTERO';
+
+xY         = voiNamesR;
+
+SPM        = 'SPM.mat';
+
+n   = 4;    % number of regions
+
+nu  = 1;    % number of inputs. For DCM for CSD we have one input: null
+
+TR  = 0.72;    % volume repetition time (seconds)
+
+TE  = 0.0331; % echo time (seconds)
+
+ 
+
+% Connectivity matrices
+
+a  = ones(n,n);
+
+
+b  = zeros(n,n,nu);
+
+c  = zeros(n,nu);
+
+d  = zeros(n,n,0);
+
+ 
+
+% Specify DCM
+
+s = struct();
+
+s.name       = model_name;
+
+s.u          = [];
+
+s.delays     = repmat(TR/2, 1, n)';
+
+s.TE         = TE;
+
+s.nonlinear  = false;
+
+s.two_state  = false;
+
+s.stochastic = false;
+
+s.centre     = false;
+
+s.induced    = 1;       % indicates DCM for CSD
+
+s.a          = a;
+
+s.b          = b;
+
+s.c          = c;
+
+s.d          = d;
+
+ 
+
+DCM = spm_dcm_specify(SPM,xY,s);
+
+
+
+end
+
+clear DCM
+%%estimate DCMs
+
+
+ for h=1: length(subNames) 
+   
+ GCM_L_EXTERO(h,1) = {fullfile(root_dir, 'GLM2', subNames{h},'DCM_L_EXTERO.mat')}; 
+ 
+ end
+  
+ 
+ for h=1: length(subNames) 
+   
+ GCM_R_EXTERO(h,1) = {fullfile(root_dir, 'GLM2', subNames{h},'DCM_R_EXTERO.mat')}; 
+ 
+ end
+  
+cd(root_dir);
+
+use_parfor = true ;
+GCM_L_EXTERO = spm_dcm_fit(GCM_L_EXTERO);
+save('GCM_L_EXTERO.mat','GCM_L_EXTERO');
+
+
+GCM_R_EXTERO = spm_dcm_fit(GCM_R_EXTERO);
+save('GCM_R_EXTERO.mat','GCM_R_EXTERO');
 
 rmdir('func','s')  
 rmdir('spm12','s')
 rmdir('masks','s')
-
+rmdir('GLM','s')
+rmdir('GLM2','s')
